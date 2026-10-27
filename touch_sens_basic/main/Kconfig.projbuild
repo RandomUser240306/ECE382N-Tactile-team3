@@ -1,0 +1,15 @@
+menu "UART Timestamp"
+
+    config TOUCH_WIFI_SSID
+        string "Wi-Fi SSID"
+        default ""
+        help
+            SSID for the access point used to synchronize UTC time.
+
+    config TOUCH_WIFI_PASSWORD
+        string "Wi-Fi password"
+        default ""
+        help
+            Password for the access point used to synchronize UTC time.
+
+endmenu
