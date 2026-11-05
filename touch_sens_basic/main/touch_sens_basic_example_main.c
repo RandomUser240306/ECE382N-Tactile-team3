@@ -134,8 +134,16 @@ static uint64_t current_utc_timestamp_us(void)
     return (uint64_t)now.tv_sec * 1000000ULL + (uint64_t)now.tv_usec;
 }
 
-void app_main(void)
+static void wifi_time_sync_task(void *arg)
 {
+    (void)arg;
+    initialize_wifi_time_sync();
+    vTaskDelete(NULL);
+}
+
+void touch_sensor_task(void *arg)
+{
+    (void)arg;
     /* Handles of touch sensor */
     touch_sensor_handle_t sens_handle = NULL;
     touch_channel_handle_t chan_handle[EXAMPLE_TOUCH_CHANNEL_NUM];
@@ -176,7 +184,6 @@ void app_main(void)
         printf("Touch [CH %d] enabled on GPIO%d\n", s_channel_id[i], chan_info.chan_gpio);
     }
     printf("=================================\n");
-    initialize_wifi_time_sync();
     printf("The final numeric field in each sensor row is UTC Unix time in microseconds (0 means unsynchronized)\n");
 
     /* Step 3: Confiture the default filter for the touch sensor (Note: Touch V1 uses software filter) */
@@ -189,19 +196,33 @@ void app_main(void)
     /* Step 7: Start continuous scanning, you can also trigger oneshot scanning manually */
     ESP_ERROR_CHECK(touch_sensor_start_continuous_scanning(sens_handle));
 
+    // Time synchronization must not delay sensor readings or motor controls.
+    if (CONFIG_TOUCH_WIFI_SSID[0] != '\0') {
+        if (xTaskCreate(wifi_time_sync_task, "wifi_time", 6144, NULL,
+                        tskIDLE_PRIORITY, NULL) != pdPASS) {
+            printf("Wi-Fi time task could not start; timestamp field will be 0\n");
+        }
+    } else {
+        printf("Wi-Fi SSID is empty; timestamp field will be 0\n");
+    }
+
     /* Step8: Print the sampled data of each enabled touch channel */
     uint32_t data[EXAMPLE_TOUCH_SAMPLE_CFG_NUM] = {};
+    // One UART write per row keeps motor status lines out of the middle of CSV data.
+    ESP_STATIC_ASSERT(EXAMPLE_TOUCH_CHANNEL_NUM * EXAMPLE_TOUCH_SAMPLE_CFG_NUM * 12 + 24 < 512,
+                      "touch sensor row buffer is too small");
+    char row[512];
     while (1) {
-            /* Read and print the channel data of each sample configuration */
-            for(int i=0; i<EXAMPLE_TOUCH_CHANNEL_NUM; i++) {
-                ESP_ERROR_CHECK(touch_channel_read_data(chan_handle[i], TOUCH_CHAN_DATA_TYPE_SMOOTH, data));
-                // printf("smooth    [CH %d]:", s_channel_id[i]);
-                for (int j = 0; j < EXAMPLE_TOUCH_SAMPLE_CFG_NUM; j++) {
-                    printf(" %"PRIu32",", data[j]);
-                }
-                
+        /* Read and print the channel data of each sample configuration */
+        size_t used = 0;
+        for (int i = 0; i < EXAMPLE_TOUCH_CHANNEL_NUM; i++) {
+            ESP_ERROR_CHECK(touch_channel_read_data(chan_handle[i], TOUCH_CHAN_DATA_TYPE_SMOOTH, data));
+            for (int j = 0; j < EXAMPLE_TOUCH_SAMPLE_CFG_NUM; j++) {
+                used += snprintf(row + used, sizeof(row) - used, " %" PRIu32 ",", data[j]);
             }
-            printf(" %"PRIu64"\n", current_utc_timestamp_us());
+        }
+        snprintf(row + used, sizeof(row) - used, " %" PRIu64, current_utc_timestamp_us());
+        printf("%s\n", row);
         /* Read and display the data every 20 ms */
         vTaskDelay(pdMS_TO_TICKS(20));
     }

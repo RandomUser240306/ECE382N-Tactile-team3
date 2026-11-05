@@ -3463,6 +3463,30 @@
 			)
 		)
 	)
+	(global_label "MOTOR_ENA"
+		(shape input)
+		(at 205.74 22.86 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "4741e359-13a1-4120-875a-0975d1090676")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 219.6109 22.86 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
 	(global_label "MOTOR_IN2"
 		(shape input)
 		(at 68.58 66.04 0)
@@ -4124,6 +4148,30 @@
 		(uuid "c8a796ee-4db9-4c2b-b438-015a53f37256")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 218.8247 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
+	(global_label "MOTOR_ENA"
+		(shape input)
+		(at 68.58 60.96 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cb4d1726-c25f-4af9-a355-74ef8089390a")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 82.4509 60.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
